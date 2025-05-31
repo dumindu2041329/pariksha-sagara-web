@@ -9,9 +9,16 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, logout, switchUser } = useAuth();
+  const { user, signOut, switchUser } = useAuth();
 
   if (!user) return <>{children}</>;
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
+  // Extract name from user metadata or email
+  const userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -24,15 +31,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 ExamHub
               </div>
               <div className="text-sm text-gray-600">
-                {user.role === 'admin' ? 'Admin Panel' : 'Student Portal'}
+                Admin Panel
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* Demo Switch User Buttons */}
+              {/* Demo Switch User Buttons - for demonstration purposes */}
               <div className="flex space-x-2">
                 <Button
-                  variant={user.role === 'admin' ? 'default' : 'outline'}
+                  variant="outline"
                   size="sm"
                   onClick={() => switchUser('admin')}
                   className="text-xs"
@@ -41,7 +48,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   Admin
                 </Button>
                 <Button
-                  variant={user.role === 'student' ? 'default' : 'outline'}
+                  variant="outline"
                   size="sm"
                   onClick={() => switchUser('student')}
                   className="text-xs"
@@ -53,9 +60,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               
               <div className="flex items-center space-x-3">
                 <div className="text-sm text-gray-700 font-medium">
-                  {user.name}
+                  {userName}
                 </div>
-                <Button variant="ghost" size="sm" onClick={logout}>
+                <Button variant="ghost" size="sm" onClick={handleSignOut}>
                   <LogOut className="w-4 h-4" />
                 </Button>
               </div>

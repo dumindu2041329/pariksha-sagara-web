@@ -1,69 +1,123 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '../types';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '../integrations/supabase/client';
+import { useToast } from '../hooks/use-toast';
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  session: Session | null;
+  loading: boolean;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signOut: () => Promise<void>;
   switchUser: (role: 'admin' | 'student') => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for demo
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'Admin User',
-    email: 'admin@exam.lk',
-    role: 'admin'
-  },
-  {
-    id: '2',
-    name: 'Student User',
-    email: 'student@exam.lk',
-    role: 'student'
-  }
-];
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user is logged in from localStorage
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // Mock authentication
-    const foundUser = mockUsers.find(u => u.email === email);
-    if (foundUser) {
-      setUser(foundUser);
-      localStorage.setItem('currentUser', JSON.stringify(foundUser));
-      return true;
+  const signUp = async (email: string, password: string, fullName: string) => {
+    const redirectUrl = `${window.location.origin}/`;
+    
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          full_name: fullName
+        }
+      }
+    });
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Sign up failed",
+        description: error.message
+      });
+    } else {
+      toast({
+        title: "Check your email",
+        description: "We've sent you a confirmation link to complete your registration."
+      });
     }
-    return false;
+
+    return { error };
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('currentUser');
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Sign in failed",
+        description: error.message
+      });
+    }
+
+    return { error };
   };
 
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Sign out failed",
+        description: error.message
+      });
+    }
+  };
+
+  // Mock function for demo purposes - will be replaced with proper role management
   const switchUser = (role: 'admin' | 'student') => {
-    const foundUser = mockUsers.find(u => u.role === role);
-    if (foundUser) {
-      setUser(foundUser);
-      localStorage.setItem('currentUser', JSON.stringify(foundUser));
-    }
+    toast({
+      title: "Demo Mode",
+      description: `Switched to ${role} view. In production, this would be based on user roles.`
+    });
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, switchUser }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      loading, 
+      signUp, 
+      signIn, 
+      signOut, 
+      switchUser 
+    }}>
       {children}
     </AuthContext.Provider>
   );
