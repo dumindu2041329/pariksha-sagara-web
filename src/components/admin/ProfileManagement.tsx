@@ -9,8 +9,12 @@ import { User, Mail, Settings, Shield, Save } from 'lucide-react';
 
 const ProfileManagement: React.FC = () => {
   const { user } = useAuth();
+  
+  // Extract name from user metadata or email, fallback to empty string
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || '';
+  
   const [profile, setProfile] = useState({
-    name: user?.name || '',
+    name: userName,
     email: user?.email || '',
     phone: '+94 77 123 4567',
     organization: 'Sri Lanka Education Ministry',
