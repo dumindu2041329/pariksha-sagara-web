@@ -15,39 +15,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      authenticate_student: {
-        Args: { student_email: string; student_password: string }
-        Returns: {
-          id: number
-          email: string
-          name: string
-          class: string
-          enrollment_date: string
-          phone: string
-          address: string
-          date_of_birth: string
-          guardian_name: string
-          guardian_phone: string
-          profile_image: string
-          created_at: string
-          updated_at: string
-        }[]
-      }
-      authenticate_user: {
-        Args: { user_email: string; user_password: string }
-        Returns: {
-          id: number
-          email: string
-          name: string
-          role: string
-          is_admin: boolean
-          student_id: number
-        }[]
-      }
-      verify_password: {
-        Args: { input_password: string; stored_hash: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
